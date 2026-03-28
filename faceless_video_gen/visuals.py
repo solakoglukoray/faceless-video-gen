@@ -1,7 +1,9 @@
 """Image fetching for video slideshow.
 
-Uses the Unsplash API when UNSPLASH_ACCESS_KEY is set.
-Falls back to picsum.photos (no key required) for offline/dev use.
+Priority:
+1. Pexels API  (PEXELS_API_KEY)   — free, topic-relevant
+2. Unsplash API (UNSPLASH_ACCESS_KEY) — free, topic-relevant
+3. picsum.photos — no key, but random (not topic-relevant)
 """
 
 import os
@@ -17,11 +19,39 @@ def fetch_images(
 ) -> list[str]:
     """Download `count` images related to `query` and return their local paths."""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    access_key = os.getenv("UNSPLASH_ACCESS_KEY")
 
-    if access_key:
-        return _fetch_unsplash(query, count, output_dir, access_key)
+    pexels_key = os.getenv("PEXELS_API_KEY")
+    unsplash_key = os.getenv("UNSPLASH_ACCESS_KEY")
+
+    if pexels_key:
+        return _fetch_pexels(query, count, output_dir, pexels_key)
+    if unsplash_key:
+        return _fetch_unsplash(query, count, output_dir, unsplash_key)
     return _fetch_picsum(count, output_dir)
+
+
+def _fetch_pexels(
+    query: str,
+    count: int,
+    output_dir: str,
+    api_key: str,
+) -> list[str]:
+    url = "https://api.pexels.com/v1/search"
+    params = {"query": query, "per_page": min(count, 80), "orientation": "landscape"}
+    headers = {"Authorization": api_key}
+
+    with httpx.Client(timeout=30) as client:
+        response = client.get(url, params=params, headers=headers)
+        response.raise_for_status()
+        photos = response.json().get("photos", [])
+
+    paths: list[str] = []
+    for i, photo in enumerate(photos[:count]):
+        img_url = photo["src"]["large2x"]
+        path = f"{output_dir}/image_{i:02d}.jpg"
+        _download(img_url, path)
+        paths.append(path)
+    return paths
 
 
 def _fetch_unsplash(

@@ -78,3 +78,7 @@ def voices() -> None:
     console.print("[bold]Available voices:[/bold]")
     for v in AVAILABLE_VOICES:
         console.print(f"  [cyan]{v}[/cyan]")
+
+
+if __name__ == "__main__":
+    app()

@@ -21,12 +21,12 @@ def assemble_video(
     duration_per_image = audio.duration / len(image_paths)
 
     clips = [
-        ImageClip(img).set_duration(duration_per_image)
+        ImageClip(img).with_duration(duration_per_image)
         for img in image_paths
     ]
 
     video = concatenate_videoclips(clips, method="compose")
-    video = video.set_audio(audio)
+    video = video.with_audio(audio)
     video.write_videofile(output_path, fps=fps, logger=None)
 
     audio.close()
