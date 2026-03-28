@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "faceless-video-gen"
+version = "0.1.0"
+description = "Generate faceless YouTube videos from a topic using LLM scripting, edge-tts voiceover, and MoviePy slideshow assembly."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "typer>=0.9",
+    "rich>=13.0",
+    "openai>=1.0",
+    "edge-tts>=6.1",
+    "moviepy>=2.0",
+    "httpx>=0.27",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+faceless-video-gen = "faceless_video_gen.cli:app"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
