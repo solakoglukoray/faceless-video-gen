@@ -1,4 +1,4 @@
-"""Core pipeline: topic → script → audio → images → video."""
+"""Core pipeline: topic → script → audio → visuals → video."""
 
 import shutil
 import tempfile
@@ -6,8 +6,8 @@ from pathlib import Path
 
 from faceless_video_gen.llm import generate_script
 from faceless_video_gen.tts import generate_audio
-from faceless_video_gen.video import assemble_video
-from faceless_video_gen.visuals import fetch_images
+from faceless_video_gen.video import assemble_from_clips, assemble_video
+from faceless_video_gen.visuals import fetch_images, fetch_video_clips
 
 
 def generate_video(
@@ -22,8 +22,8 @@ def generate_video(
     Steps:
     1. Generate a script with an LLM.
     2. Convert the script to speech (edge-tts).
-    3. Fetch background images (Unsplash or picsum fallback).
-    4. Assemble images + audio into an MP4.
+    3. Fetch B-roll video clips (Pexels) or images as fallback.
+    4. Assemble visuals + audio into an MP4.
     """
     workdir = Path(tempfile.mkdtemp(prefix="faceless_"))
     try:
@@ -32,10 +32,18 @@ def generate_video(
         audio_path = str(workdir / "narration.mp3")
         generate_audio(script, voice=voice, output_path=audio_path)
 
-        images_dir = str(workdir / "images")
-        image_paths = fetch_images(topic, count=image_count, output_dir=images_dir)
+        clips_dir = str(workdir / "clips")
+        clip_paths = fetch_video_clips(topic, count=image_count, output_dir=clips_dir)
 
-        result = assemble_video(image_paths, audio_path, output_path=output)
+        if clip_paths:
+            result = assemble_from_clips(clip_paths, audio_path, output_path=output)
+        else:
+            images_dir = str(workdir / "images")
+            image_paths = fetch_images(
+                topic, count=image_count, output_dir=images_dir
+            )
+            result = assemble_video(image_paths, audio_path, output_path=output)
+
         return result
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
